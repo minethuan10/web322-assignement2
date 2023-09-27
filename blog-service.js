@@ -1,4 +1,3 @@
-
 const { rejects } = require("assert");
 const file = require("fs"); // required at the top of my module
 const { resolve } = require("path");
@@ -74,4 +73,3 @@ module.exports = {
   getPublishedPosts,
   getCategories,
 };
-  
