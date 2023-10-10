@@ -22,6 +22,48 @@ var categories = [];
 // blog-service.js
 
  // Assuming you have an array to store posts
+// blog-service.js
+
+// Assuming you have an array called 'posts' containing your blog posts
+
+function getPostsByCategory(category) {
+  return new Promise((resolve, reject) => {
+    const filteredPosts = posts.filter((post) => post.category === category);
+    
+    if (filteredPosts.length === 0) {
+      reject("No results returned");
+    } else {
+      resolve(filteredPosts);
+    }
+  });
+}
+
+function getPostsByMinDate(minDateStr) {
+  return new Promise((resolve, reject) => {
+    const filteredPosts = posts.filter((post) => {
+      return new Date(post.postDate) >= new Date(minDateStr);
+    });
+    
+    if (filteredPosts.length === 0) {
+      reject("No results returned");
+    } else {
+      resolve(filteredPosts);
+    }
+  });
+}
+
+function getPostById(id) {
+  return new Promise((resolve, reject) => {
+    const foundPost = posts.find((post) => post.id === id);
+    
+    if (foundPost) {
+      resolve(foundPost);
+    } else {
+      reject("No result returned");
+    }
+  });
+}
+
 
 function addPost(postData) {
   return new Promise((resolve, reject) => {
@@ -105,4 +147,7 @@ module.exports = {
   getPublishedPosts,
   getCategories,
   addPost,
+  getPostsByCategory,
+  getPostsByMinDate,
+  getPostById,
 };

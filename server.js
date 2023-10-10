@@ -24,6 +24,37 @@ const upload = multer();
 const app = express(); // obtain the "app" object
 const HTTP_PORT = process.env.PORT || 8080; // assign a port
 const blogService = require("./blog-service.js");
+app.post("/posts/add", upload.single("featureImage"), async (req, res) => {
+  try {
+    // The uploaded file can be accessed using req.file
+    const uploadedFile = req.file;
+    
+    if (uploadedFile) {
+      req.body.featureImage = uploadedFile.path; // Use the file path or other relevant information
+      
+      // Now, you can add the blog post using blogService
+      const newPost = {
+        // Create your post object here based on req.body
+        // Example: title, content, author, etc.
+      };
+
+      blogService.addPost(newPost)
+        .then(() => {
+          res.redirect('/posts');
+        })
+        .catch((error) => {
+          console.error(error);
+          res.status(500).send('Internal Server Error');
+        });
+    } else {
+      res.status(400).send('No file uploaded');
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error uploading image to Cloudinary');
+  }
+});
+
 app.get('/', (req, res) => {
     res.redirect('/about');
   });
@@ -44,69 +75,45 @@ app.get("/blog", (req, res) => {
 app.get("/posts/add",(req,res)=>{
  res.sendFile(__dirname+"/views/addPost.html");
  upload.single("featureImage");
- let streamUpload = (req) => {
-    return new Promise((resolve, reject) => {
-        let stream = cloudinary.uploader.upload_stream(
-            (error, result) => {
-            if (result) {
-                resolve(result);
-            } else {
-                reject(error);
-            }
-            }
-        );
-
-        streamifier.createReadStream(req.file.buffer).pipe(stream);
-    });
-};
-
-async function upload(req) {
-    let result = await streamUpload(req);
-    console.log(result);
-    return result;
-}
-
-upload(req).then((uploaded)=>{
-    req.body.featureImage = uploaded.url;
-
-    // TODO: Process the req.body and add it as a new Blog Post before redirecting to /posts
-
 });
-app.post("/posts/add", upload.single("featureImage"), async (req, res) => {
-  try {
-    const uploaded = await upload(req);
-    req.body.featureImage = uploaded.url;
 
-    // Now, you can add the blog post using blogService
-    const newPost = {
-      // Create your post object here based on req.body
-      // Example: title, content, author, etc.
-    };
+app.get("/posts", (req, res) => {
+  const { category, minDate } = req.query;
 
-    blogService.addPost(newPost)
-      .then(() => {
-        res.redirect('/posts');
+  if (category) {
+    // Filter by category
+    blogService
+      .getPostsByCategory(parseInt(category)) // Assuming category is an integer
+      .then((data) => {
+        res.json(data);
       })
-      .catch((error) => {
-        console.error(error);
+      .catch(function (err) {
+        console.log("Unable to fetch posts by category: " + err);
         res.status(500).send('Internal Server Error');
       });
-  } catch (error) {
-    console.error(error);
-    res.status(500).send('Error uploading image to Cloudinary');
+  } else if (minDate) {
+    // Filter by minimum date
+    blogService
+      .getPostsByMinDate(minDate) // Assuming minDate is in "YYYY-MM-DD" format
+      .then((data) => {
+        res.json(data);
+      })
+      .catch(function (err) {
+        console.log("Unable to fetch posts by minDate: " + err);
+        res.status(500).send('Internal Server Error');
+      });
+  } else {
+    // Return all posts without any filter
+    blogService
+      .getAllPosts()
+      .then((data) => {
+        res.json(data);
+      })
+      .catch(function (err) {
+        console.log("Unable to open the file: " + err);
+        res.status(500).send('Internal Server Error');
+      });
   }
-});
-
-});
-app.get("/posts", (req, res) => {
-  blogService
-    .getAllPosts()
-    .then((data) => {
-      res.json(data);
-    })
-    .catch(function (err) {
-      console.log("Unable to open the file: " + err);
-    });
 });
 
 app.get("/categories", (req, res) => {
