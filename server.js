@@ -30,7 +30,9 @@ app.get("/blog", (req, res) => {
       console.log("Unable to open the file: " + err);
     });
 });
-
+app.get("/posts/add",(req,res)=>{
+ res.sendFile(__dirname+"/views/addPost.html");
+});
 app.get("/posts", (req, res) => {
   blogService
     .getAllPosts()
