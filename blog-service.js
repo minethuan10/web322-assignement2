@@ -19,6 +19,27 @@ var categories = [];
 
 //initialize()
 //•	This function will read the contents of the "./data/posts.json" and "./data/categories.json" file
+// blog-service.js
+
+ // Assuming you have an array to store posts
+
+function addPost(postData) {
+  return new Promise((resolve, reject) => {
+    if (typeof postData.published === 'undefined') {
+      postData.published = false;
+    } else {
+      postData.published = true;
+    }
+    
+    postData.id = posts.length + 1;
+    
+    posts.push(postData);
+    
+    resolve(postData);
+  });
+}
+
+
 
 initialize = function () {
   return new Promise((resolve, reject) => {
@@ -83,4 +104,5 @@ module.exports = {
   getAllPosts,
   getPublishedPosts,
   getCategories,
+  addPost,
 };
