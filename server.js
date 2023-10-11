@@ -25,45 +25,60 @@ const app = express(); // obtain the "app" object
 const HTTP_PORT = process.env.PORT || 8080; // assign a port
 const blogService = require("./blog-service.js");
 app.post("/posts/add", upload.single("featureImage"), async (req, res) => {
+  let streamUpload = (req) => {
+    return new Promise((resolve, reject) => {
+      let stream = cloudinary.uploader.upload_stream(
+        (error, result) => {
+          if (result) {
+            resolve(result);
+          } else {
+            reject(error);
+          }
+        }
+      );
+
+      streamifier.createReadStream(req.file.buffer).pipe(stream);
+    });
+  };
+
+  async function uploadImage(req) {
+    try {
+      let uploaded = await streamUpload(req);
+      return uploaded;
+    } catch (error) {
+      throw error;
+    }
+  }
 
   try {
-    // The uploaded file can be accessed using req.file
-    const uploadedFile = req.file;
+    const uploaded = await uploadImage(req);
+    req.body.featureImage = uploaded.url;
 
-    if (uploadedFile) {
-      console.log("Uploaded file:", uploadedFile);
+    // Now you can process the req.body and add it as a new Blog Post using blogService
+    const newPost = {
+      title: req.body.title,
+      body: req.body.body,
+      category: parseInt(req.body.category),
+      published: req.body.published === 'on',
+      featureImage: req.body.featureImage,
+    };
 
-      // Use the file path or other relevant information
-      req.body.featureImage = uploadedFile.path;
-
-      // Create the new blog post object based on the form data
-      const newPost = {
-        title: req.body.title,
-        body: req.body.body,
-        category: parseInt(req.body.category),
-        published: req.body.published === 'on', // Check the checkbox value
-        featureImage: req.body.featureImage,
-      };
-
-      console.log("New post data:", newPost);
-
-      // Now, you can add the blog post using blogService
-      blogService.addPost(newPost)
-        .then((addedPost) => {
-          res.redirect('/posts');
-        })
-        .catch((error) => {
-          console.error(error);
-          res.status(500).send('Internal Server Error');
-        });
-    } else {
-      res.status(400).send('No file uploaded');
-    }
+    // Add the new blog post using blogService
+    blogService.addPost(newPost)
+      .then((addedPost) => {
+        console.log({ addedPost });
+        res.redirect('/posts');
+      })
+      .catch((error) => {
+        console.error(error);
+        res.status(500).send('Internal Server Error');
+      });
   } catch (error) {
     console.error(error);
     res.status(500).send('Error uploading image to Cloudinary');
   }
 });
+
 
 app.get('/', (req, res) => {
     res.redirect('/about');
