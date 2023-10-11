@@ -28,18 +28,27 @@ app.post("/posts/add", upload.single("featureImage"), async (req, res) => {
   try {
     // The uploaded file can be accessed using req.file
     const uploadedFile = req.file;
-    
+
     if (uploadedFile) {
-      req.body.featureImage = uploadedFile.path; // Use the file path or other relevant information
-      
-      // Now, you can add the blog post using blogService
+      console.log("Uploaded file:", uploadedFile);
+
+      // Use the file path or other relevant information
+      req.body.featureImage = uploadedFile.path;
+
+      // Create the new blog post object based on the form data
       const newPost = {
-        // Create your post object here based on req.body
-        // Example: title, content, author, etc.
+        title: req.body.title,
+        body: req.body.body,
+        category: parseInt(req.body.category),
+        published: req.body.published === 'on', // Check the checkbox value
+        featureImage: req.body.featureImage,
       };
 
+      console.log("New post data:", newPost);
+
+      // Now, you can add the blog post using blogService
       blogService.addPost(newPost)
-        .then(() => {
+        .then((addedPost) => {
           res.redirect('/posts');
         })
         .catch((error) => {

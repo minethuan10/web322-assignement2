@@ -57,7 +57,16 @@ function getPostById(id) {
     const foundPost = posts.find((post) => post.id === id);
     
     if (foundPost) {
-      resolve(foundPost);
+      const formattedPost = {
+        id: foundPost.id,
+        title: foundPost.title,
+        body: foundPost.content,
+        postDate: foundPost.postDate,
+        category: foundPost.category,
+        featureImage: foundPost.featureImage,
+        published: foundPost.published
+      };
+      resolve(formattedPost);
     } else {
       reject("No result returned");
     }
