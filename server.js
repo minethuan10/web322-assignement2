@@ -5,7 +5,7 @@
 * 
 *  Name: Vu Duc Thuan Tran Student ID: 121804223 Date: 27/9/23
 *
-*  Online (Cyclic) Link:  https://happy-pleat-elk.cyclic.cloud/
+*  Online (Cyclic) Link:  https://ill-rose-eel-tam.cyclic.app/about
 *
 ********************************************************************************/ 
 
@@ -25,6 +25,7 @@ const app = express(); // obtain the "app" object
 const HTTP_PORT = process.env.PORT || 8080; // assign a port
 const blogService = require("./blog-service.js");
 app.post("/posts/add", upload.single("featureImage"), async (req, res) => {
+
   try {
     // The uploaded file can be accessed using req.file
     const uploadedFile = req.file;
