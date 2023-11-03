@@ -28,13 +28,9 @@ var categories = [];
 
 function getPostsByCategory(category) {
   return new Promise((resolve, reject) => {
-    const filteredPosts = posts.filter((post) => post.category === category);
-    
-    if (filteredPosts.length === 0) {
-      reject("No results returned");
-    } else {
-      resolve(filteredPosts);
-    }
+      const checkPost = posts.filter((post) => post.category === parseInt(category));
+      if (checkPost.length === 0) reject("No results");
+      else resolve(checkPost);
   });
 }
 
@@ -51,7 +47,20 @@ function getPostsByMinDate(minDateStr) {
     }
   });
 }
-
+getPublishedPostsByCategory = (category) => {
+  return new Promise((resolve, reject) => {
+    if (posts.length > 0) {
+      let postsByCategory = posts.filter((post) => {
+        return post.published == true && post.category == category;
+      });
+      if (postsByCategory.length > 0) {
+        resolve(postsByCategory);
+      } else {
+        reject("no results returned");
+      }
+    }
+  });
+};
 function getPostById(id) {
   return new Promise((resolve, reject) => {
     const foundPost = posts.find((post) => post.id === id);
@@ -155,8 +164,10 @@ module.exports = {
   getAllPosts,
   getPublishedPosts,
   getCategories,
+  getPublishedPostsByCategory,
   addPost,
   getPostsByCategory,
   getPostsByMinDate,
   getPostById,
+  
 };
