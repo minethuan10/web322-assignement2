@@ -1,4 +1,13 @@
-
+/*********************************************************************************
+*  WEB322 – Assignment 02
+*  I declare that this assignment is my own work in accordance with Seneca  Academic Policy.  No part *  of this assignment has been copied manually or electronically from any other source 
+*  (including 3rd party web sites) or distributed to other students.
+* 
+*  Name: Vu Duc Thuan Tran Student ID: 121804223 Date: 27/9/23
+*
+*  Online (Cyclic) Link:  https://ill-rose-eel-tam.cyclic.app/about
+*
+********************************************************************************/ 
 const express = require('express'); 
 const exphbs = require('express-handlebars');
 const stripJs = require('strip-js');
