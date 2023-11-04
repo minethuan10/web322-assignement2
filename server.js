@@ -318,4 +318,3 @@ blog_service
     console.log("Unable to open the file: " + err);
   });
 
-

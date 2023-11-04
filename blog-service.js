@@ -47,38 +47,22 @@ function getPostsByMinDate(minDateStr) {
     }
   });
 }
-getPublishedPostsByCategory = (category) => {
+function getPublishedPostsByCategory(category) {
+  const truePosts = posts.filter((post) => post.published == true && post.category == category);
   return new Promise((resolve, reject) => {
-    if (posts.length > 0) {
-      let postsByCategory = posts.filter((post) => {
-        return post.published == true && post.category == category;
-      });
-      if (postsByCategory.length > 0) {
-        resolve(postsByCategory);
-      } else {
-        reject("no results returned");
+      if (truePosts.length > 0) {
+          resolve(truePosts);
       }
-    }
+      else {
+          reject("no results returned");
+      }
   });
-};
+}
 function getPostById(id) {
   return new Promise((resolve, reject) => {
-    const foundPost = posts.find((post) => post.id === id);
-    
-    if (foundPost) {
-      const formattedPost = {
-        id: foundPost.id,
-        title: foundPost.title,
-        body: foundPost.content,
-        postDate: foundPost.postDate,
-        category: foundPost.category,
-        featureImage: foundPost.featureImage,
-        published: foundPost.published
-      };
-      resolve(formattedPost);
-    } else {
-      reject("No result returned");
-    }
+      const checkID = posts.find((post) => post.id === parseInt(id));
+      if (!checkID) reject('No results');
+      else resolve(checkID);
   });
 }
 
