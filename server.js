@@ -19,7 +19,7 @@ const stripJs = require('strip-js');
 const clientSessions = require('client-sessions'); 
 const path = require('path');
 const multer = require('multer');
-const mongoose = require('mongoose');
+
 const cloudinary = require('cloudinary').v2;
 const streamifier = require('streamifier');
 const upload = multer();
