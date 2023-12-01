@@ -17,7 +17,7 @@ const userSchema = new Schema({
 });
 module.exports.initialize = function () {
     return new Promise(function (resolve, reject) {
-        let db = mongoose.createConnection("mongodb://localhost:27017");
+        let db = mongoose.createConnection("mongodb+srv://Minethuan10:HX83ouqIccXS9ToR@cluster0.y7m9oqw.mongodb.net/");
 
         db.on('error', (err)=>{
             reject(err); // reject the promise with the provided error
