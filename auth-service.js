@@ -80,11 +80,13 @@ async function checkUser(userData) {
                     { $set: { loginHistory: users[0].loginHistory } }
                 );
 
-                return resolve(users[0]);  // Fixed the missing 'return' statement here
+                // The next line is the fix for the missing 'return' statement
+                return Promise.resolve(users[0]);
             }
         }
     } catch (err) {
-        throw new Error(`Error checking user: ${err}`);
+        // The next line is the fix for the missing 'return' statement
+        return Promise.reject(`Error checking user: ${err}`);
     }
 }
 
