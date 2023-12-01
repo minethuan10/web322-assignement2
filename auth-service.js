@@ -80,7 +80,7 @@ async function checkUser(userData) {
                     { $set: { loginHistory: users[0].loginHistory } }
                 );
 
-                resolve(users[0]);
+                return resolve(users[0]);  // Fixed the missing 'return' statement here
             }
         }
     } catch (err) {
