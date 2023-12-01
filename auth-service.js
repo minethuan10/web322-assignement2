@@ -59,7 +59,7 @@ function checkUser(userData) {
     let user = userData.userName;
     return new Promise(function (resolve, reject) {
         // User.find().then(users => console.log(users))
-        User.find({ userName: user })
+        User.find({ userName: userData.userName })
         .exec()
         .then(users => {
             if (users.length < 1) {
