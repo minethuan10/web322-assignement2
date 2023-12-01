@@ -1,37 +1,49 @@
 const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
 const bcrypt = require('bcryptjs');
 const dotenv = require('dotenv');
+
+
 dotenv.config();
+
+const MONGO_USER = process.env.MONGO_USER;
+const MONGO_PASSWORD = process.env.MONGO_PASSWORD;
+const MONGO_CLUSTER = process.env.MONGO_CLUSTER;
+const MONGO_DATABASE = process.env.MONGO_DATABASE;
+
+const userSchema = new mongoose.Schema({
+    userName: {
+        type: String,
+        unique: true,
+    },
+    password: String,
+    email: String,
+    loginHistory: {
+        type: [{
+            dateTime: Date,
+            userAgent: String,
+        }],
+        default: [],
+    },
+});
+
 let User;
 
-const userSchema = new Schema({
-  userName: { type: String, unique: true },
-  password: String,
-  email: String,
-  loginHistory: [
-    {
-      dateTime: Date,
-      userAgent: String,
-    },
-  ],
-});
-module.exports.initialize = function () {
+initialize = () => {
     return new Promise(function (resolve, reject) {
-        let db = mongoose.createConnection("mongodb+srv://Minethuan10:HX83ouqIccXS9ToR@cluster0.y7m9oqw.mongodb.net/");
+        const uri = `mongodb+srv://Minethuan10:HX83ouqIccXS9ToR@cluster0.y7m9oqw.mongodb.net/`;
+        
+        let db = mongoose.createConnection(uri);
 
-        db.on('error', (err)=>{
+        db.on('error', (err) => {
             reject(err); // reject the promise with the provided error
         });
-        db.once('open', ()=>{
-           User = db.model("users", userSchema);
-           resolve();
+        db.once('open', () => {
+            User = db.model("users", userSchema);
+            resolve();
         });
     });
 };
-
-
-module.exports.registerUser = async (userData) => {
+registerUser = async (userData) => {
     try {
         if (userData.password !== userData.password2) {
             throw new Error('Passwords do not match');
@@ -53,7 +65,7 @@ module.exports.registerUser = async (userData) => {
     }
 };
 
-module.exports.checkUser = async (userData) => {
+checkUser = async (userData) => {
     try {
         const users = await User.find({ userName: userData.userName }).exec();
 
@@ -86,3 +98,9 @@ module.exports.checkUser = async (userData) => {
         return Promise.reject('Unable to find user:' + userData.userName);
     }
 };
+
+module.exports = {
+    initialize,
+    registerUser,
+    checkUser,
+}
