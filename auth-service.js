@@ -43,28 +43,29 @@ initialize = () => {
         });
     });
 };
-
-registerUser = async (userData) => {
-    try {
+function registerUser(userData) {
+    return new Promise(function (resolve, reject) {
         if (userData.password !== userData.password2) {
-            throw new Error('Passwords do not match');
-        }
-
-        const hash = await bcrypt.hash(userData.password, 10);
-        userData.password = hash;
-
-        const newUser = new User(userData);
-        await newUser.save();
-
-        return Promise.resolve();
-    } catch (err) {
-        if (err.code === 11000) {
-            return Promise.reject('User Name already taken');
+            reject("Passwords do not match");
         } else {
-            return Promise.reject('There was an error creating the user: ' + err);
+            bcrypt
+            .hash(userData.password, 10)
+            .then((hash) => {
+                userData.password = hash;
+                
+                user.save()
+                .then(() => resolve())
+                .catch(err => {
+                    err.code === 11000 
+                        ? reject("User Name already taken")
+                        : reject(`There was an error creating the user: ${err}`);
+
+                })
+            })
         }
-    }
+    });
 };
+
 
 function checkUser(userData) {
     let user = userData.userName;
