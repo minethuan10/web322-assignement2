@@ -30,7 +30,7 @@ let User;
 
 initialize = () => {
     return new Promise(function (resolve, reject) {
-        const uri = `mongodb+srv://Minethuan10:HX83ouqIccXS9ToR@cluster0.y7m9oqw.mongodb.net/`;
+        const uri = `mongodb+srv://vdtr2808:vwbkDdhvjNkpRcYL@cluster0.qbgnaqa.mongodb.net/`;
         
         let db = mongoose.createConnection(uri);
 
