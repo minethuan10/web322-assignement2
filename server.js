@@ -1,14 +1,14 @@
-// // /*********************************************************************************
-// // *  WEB322 – Assignment 6
-// // *  I declare that this assignment is my own work in accordance with Seneca  Academic Policy.  
-// // *  No part of this assignment has been copied manually or electronically from any other source
-// // *  (including web sites) or distributed to other students.
-// // * 
-// // *  Name: Shaun Manansala Student ID: 150305225 Due Date: October, 13, 2023
-// // *
-// // *  Online (Cyclic) URL: https://calm-blue-coati-cuff.cyclic.app/
-// // *
-// // ******************************************************************************/ 
+/*********************************************************************************
+*  WEB322 – Assignment 02
+*  I declare that this assignment is my own work in accordance with Seneca  Academic Policy.  No part *  of this assignment has been copied manually or electronically from any other source 
+*  (including 3rd party web sites) or distributed to other students.
+* 
+*  Name: Vu Duc Thuan Tran Student ID: 121804223 Date: 27/9/23
+*
+*  Online (Cyclic) Link:  https://ill-rose-eel-tam.cyclic.app/about
+*
+********************************************************************************/ 
+
 
 const express = require('express');
 const blog_service = require('./blog-service');
