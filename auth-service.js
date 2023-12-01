@@ -57,13 +57,16 @@ registerUser = async (userData) => {
 
         return Promise.resolve();
     } catch (err) {
-        if (err.code === 11000) {
+        console.error('Error in registerUser:', err);
+
+        if (err.message.includes('duplicate key error')) {
             return Promise.reject('User Name already taken');
         } else {
-            return Promise.reject('There was an error creating the user: ' + err);
+            return Promise.reject('There was an error creating the user');
         }
     }
 };
+
 
 checkUser = async (userData) => {
     try {
