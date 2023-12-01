@@ -52,16 +52,17 @@ function registerUser(userData) {
             .hash(userData.password, 10)
             .then((hash) => {
                 userData.password = hash;
-                
-                user.save()
+
+                const newUser = new User(userData); // Create a new user instance
+                newUser.save()
                 .then(() => resolve())
                 .catch(err => {
                     err.code === 11000 
                         ? reject("User Name already taken")
                         : reject(`There was an error creating the user: ${err}`);
-
-                })
+                });
             })
+            .catch(err => reject(`Error hashing password: ${err}`));
         }
     });
 };
