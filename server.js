@@ -113,7 +113,13 @@ app.get('/about', (req, res) => {
   res.render('about');
 });
 
+app.get('/login', (req, res) => {
+  res.render('login');
+});
 
+app.get('/register', (req, res) => {
+res.render('register');
+});
 
 app.get('/posts/add', ensureLogin, (req, res) => {
   blog_service.getCategories()
@@ -127,6 +133,34 @@ app.get('/posts/add', ensureLogin, (req, res) => {
     });
 });
 
+app.post('/register', (req, res) => {
+    authData
+    .registerUser(req.body)
+    .then(() => {
+      res.render('register', {successMessage: 'User created'});
+    })
+    .catch((err) => {
+      res.render('register', {errorMessage: err, userName: req.body.userName});
+    })
+});
+
+app.post('/login', (req, res) => {
+  req.body.userAgent = req.get('User-Agent');
+  authData
+    .checkUser(req.body)
+    .then((user) => {
+      req.session.user = {
+        userName: user.userName,
+        email: user.email,
+        loginHistory: user.loginHistory || []
+      };
+      res.redirect('/posts');
+    })
+    .catch((err) => {
+      console.error(err);
+      res.render('login', { errorMessage: err, userName: req.body.userName });
+    });
+});
 
 
 app.post('/posts/add', ensureLogin, upload.single("featureImage"), (req, res) => {
@@ -303,38 +337,6 @@ app.get('/categories/delete/:id', ensureLogin, (req, res) => {
     });
 });
 
-app.get('/login', function(req, res) {
-  res.render('login');
-});
-
-
-app.get('/register', function(req, res) {
-  res.render('register');
-});
-
-app.post('/register', (req, res) => {
-  authData.registerUser(req.body)
-    .then(() => res.render('register', { successMessage: 'User created' }))
-    .catch((err) => res.render('register', { errorMessage: err, userName: req.body.userName }));
-});
-
-app.post('/login', (req, res) => {
-  req.body.userAgent = req.get('User-Agent');
-  authData.checkUser(req.body)
-    .then((user) => {
-      req.session.user = {
-        userName: user.userName,
-        email: user.email,
-        loginHistory: user.loginHistory,
-      };
-      res.redirect('/posts');
-    })
-    .catch((err) => {
-      console.log("error during login: " + err) ;
-      res.render('login', { errorMessage: err, userName: req.body.userName });
-    });
-});
-
 app.get('/logout', (req, res) => {
   req.session.reset();
   res.redirect('/');
@@ -343,6 +345,7 @@ app.get('/logout', (req, res) => {
 app.get('/userHistory', ensureLogin, (req, res) => {
   res.render('userHistory');
 });
+
 app.get('*', (req, res) => {
   res.status(404).send("Page Not Found");
 });
