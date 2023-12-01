@@ -52,7 +52,7 @@ function registerUser(userData) {
             .hash(userData.password, 10)
             .then((hash) => {
                 userData.password = hash;
-                let user = new User(userData);
+                
                 user.save()
                 .then(() => resolve())
                 .catch(err => {
