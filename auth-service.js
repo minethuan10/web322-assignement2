@@ -31,7 +31,7 @@ let User;
 initialize = () => {
     return new Promise(function (resolve, reject) {
         const uri = `mongodb+srv://vdtr2808:vwbkDdhvjNkpRcYL@cluster0.qbgnaqa.mongodb.net/?retryWrites=true&w=majority`;
-
+        
         let db = mongoose.createConnection(uri);
 
         db.on('error', (err) => {
@@ -43,6 +43,7 @@ initialize = () => {
         });
     });
 };
+
 registerUser = async (userData) => {
     try {
         if (userData.password !== userData.password2) {
@@ -65,39 +66,38 @@ registerUser = async (userData) => {
     }
 };
 
-checkUser = async (userData) => {
-    try {
-        const users = await User.find({ userName: userData.userName }).exec();
-
-        if (users.length === 0) {
-            throw new Error('Unable to find user:' + userData.userName);
-        }
-
-        const result = await bcrypt.compare(userData.password, users[0].password);
-
-        if (result) {
-            if (!users[0].loginHistory) {
-                users[0].loginHistory = [];
+function checkUser(userData) {
+    let user = userData.userName;
+    return new Promise(function (resolve, reject) {
+        // User.find().then(users => console.log(users))
+        User.find({ userName: user })
+        .exec()
+        .then(users => {
+            if (users.length < 1) {
+                reject(`Unable to find user: ${user}`);
+            } else {
+                bcrypt
+                .compare(userData.password, users[0].password)
+                .then((result) => {
+                    if (!result)
+                        reject(`Incorrect Password for user: ${user}`);
+                    else {
+                        users[0].loginHistory.push({
+                            dateTime: new Date().toString(),
+                            userAgent: userData.userAgent
+                        });
+                        User.updateOne(
+                            { userName: users[0].userName },
+                            { $set: { loginHistory: users[0].loginHistory } })
+                            .then(() => resolve(users[0]))
+                            .catch(err => reject(`There was an error verifying the user: ${err}`));
+                    }
+                }).catch(err => reject(`Unable to find user: ${user}`))
             }
-
-            users[0].loginHistory.push({
-                dateTime: new Date().toString(),
-                userAgent: userData.userAgent,
-            });
-
-            await User.updateOne(
-                { userName: users[0].userName },
-                { $set: { loginHistory: users[0].loginHistory } }
-            ).exec();
-
-            return Promise.resolve(users[0]);
-        } else {
-            return Promise.reject('Incorrect password:' + userData.userName);
-        }
-    } catch (err) {
-        return Promise.reject('Unable to find user:' + userData.userName);
-    }
+        })
+    });
 };
+
 
 module.exports = {
     initialize,
