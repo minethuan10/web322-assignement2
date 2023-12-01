@@ -10,6 +10,7 @@
 ********************************************************************************/ 
 
 
+
 const express = require('express');
 const blog_service = require('./blog-service');
 const authData = require('./auth-service');
@@ -21,13 +22,17 @@ const multer = require('multer');
 const mongoose = require('mongoose');
 const cloudinary = require('cloudinary').v2;
 const streamifier = require('streamifier');
-const HTTP_PORT = process.env.PORT || 8080;
 const upload = multer();
 const app = express();
 
+const HTTP_PORT = process.env.PORT || 3000;
 
-
-
+cloudinary.config({
+  cloud_name: 'ddpxildoy',
+  api_key: '866879417216568',
+  api_secret: 'fSSX3tQpQ_lhfKfsKMBiex2Qpv4',
+  secure: true,
+});
 
 app.engine('.hbs', exphbs.engine({
   extname: '.hbs',
@@ -70,7 +75,7 @@ app.use(express.static("views"));
 app.use(
   clientSessions({
     cookieName: "session", 
-    secret: "thuan123", 
+    secret: "something kept hidden or unexplained", 
     duration: 2 * 60 * 1000, 
     activeDuration: 1000 * 60, 
   })
@@ -90,41 +95,8 @@ function ensureLogin(req, res, next) {
     next();
   }
 }
-app.get('/login', (req, res) => {
-  res.render('login');
-});
 
-app.get('/register', (req, res) => {
-res.render('register');
-});
-app.post('/register', (req, res) => {
-  authData
-  .registerUser(req.body)
-  .then(() => {
-    res.render('register', {successMessage: 'User created'});
-  })
-  .catch((err) => {
-    res.render('register', {errorMessage: err, userName: req.body.userName});
-  })
-});
 
-app.post('/login', (req, res) => {
-req.body.userAgent = req.get('User-Agent');
-authData
-  .checkUser(req.body)
-  .then((user) => {
-    req.session.user = {
-      userName: user.userName,
-      email: user.email,
-      loginHistory: user.loginHistory || []
-    };
-    res.redirect('/posts');
-  })
-  .catch((err) => {
-    console.error(err);
-    res.render('login', { errorMessage: err, userName: req.body.userName });
-  });
-});
 app.use(function (req, res, next) {
   let route = req.path.substring(1);
   app.locals.activeRoute = "/" + (isNaN(route.split('/')[1]) ? route.replace(/\/(?!.*)/, "") : route.replace(/\/(.*)/, ""));
@@ -141,7 +113,13 @@ app.get('/about', (req, res) => {
   res.render('about');
 });
 
+app.get('/login', (req, res) => {
+  res.render('login');
+});
 
+app.get('/register', (req, res) => {
+res.render('register');
+});
 
 app.get('/posts/add', ensureLogin, (req, res) => {
   blog_service.getCategories()
@@ -155,7 +133,34 @@ app.get('/posts/add', ensureLogin, (req, res) => {
     });
 });
 
+app.post('/register', (req, res) => {
+    authData
+    .registerUser(req.body)
+    .then(() => {
+      res.render('register', {successMessage: 'User created'});
+    })
+    .catch((err) => {
+      res.render('register', {errorMessage: err, userName: req.body.userName});
+    })
+});
 
+app.post('/login', (req, res) => {
+  req.body.userAgent = req.get('User-Agent');
+  authData
+    .checkUser(req.body)
+    .then((user) => {
+      req.session.user = {
+        userName: user.userName,
+        email: user.email,
+        loginHistory: user.loginHistory || []
+      };
+      res.redirect('/posts');
+    })
+    .catch((err) => {
+      console.error(err);
+      res.render('login', { errorMessage: err, userName: req.body.userName });
+    });
+});
 
 
 app.post('/posts/add', ensureLogin, upload.single("featureImage"), (req, res) => {
