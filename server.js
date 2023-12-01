@@ -1,63 +1,65 @@
-/*********************************************************************************
-*  WEB322 – Assignment 02
-*  I declare that this assignment is my own work in accordance with Seneca  Academic Policy.  No part *  of this assignment has been copied manually or electronically from any other source 
-*  (including 3rd party web sites) or distributed to other students.
-* 
-*  Name: Vu Duc Thuan Tran Student ID: 121804223 Date: 27/9/23
-*
-*  Online (Cyclic) Link:  https://ill-rose-eel-tam.cyclic.app/about
-*
-********************************************************************************/ 
+// // /*********************************************************************************
+// // *  WEB322 – Assignment 6
+// // *  I declare that this assignment is my own work in accordance with Seneca  Academic Policy.  
+// // *  No part of this assignment has been copied manually or electronically from any other source
+// // *  (including web sites) or distributed to other students.
+// // * 
+// // *  Name: Shaun Manansala Student ID: 150305225 Due Date: October, 13, 2023
+// // *
+// // *  Online (Cyclic) URL: https://calm-blue-coati-cuff.cyclic.app/
+// // *
+// // ******************************************************************************/ 
 
 const express = require('express');
+const blog_service = require('./blog-service');
+const authData = require('./auth-service');
 const exphbs = require('express-handlebars');
 const stripJs = require('strip-js');
-const app = express();
+const clientSessions = require('client-sessions'); 
 const path = require('path');
-const blog_service = require('./blog-service');
 const multer = require('multer');
+const mongoose = require('mongoose');
 const cloudinary = require('cloudinary').v2;
 const streamifier = require('streamifier');
-const upload = multer();
 const HTTP_PORT = process.env.PORT || 8080;
+const upload = multer();
+const app = express();
 
-cloudinary.config({
-  cloud_name: 'dwnhc9gwu',
-  api_key: '393935347294981',
-  api_secret: 'S0SclRPOmJvnc3T7bjSYoloDQRg',
-  secure: true
-});
+
+
+
+
 app.engine('.hbs', exphbs.engine({
-  extname:'.hbs', 
+  extname: '.hbs',
   helpers: {
-      navLink: function(url, options) {
-          return '<li' + 
-              ((url == app.locals.activeRoute) ? ' class="active" ' : '') + 
-              '><a href="' + url + '">' + options.fn(this) + '</a></li>';
-      },
-      equal: function(lvalue, rvalue, options) {
-          if (arguments.length < 3)
-              throw new Error("Handlebars Helper equal needs 2 parameters");
-          if (lvalue != rvalue) {
-              return options.inverse(this);
-          } else {
-              return options.fn(this);
-          }
-      },
-      safeHTML: function(context){
-          return stripJs(context);
-      } , 
-      increment: function(value){
-        return value + 1;
-      },
- formatDate: function(dateObj){
-            let year = dateObj.getFullYear();
-            let month = (dateObj.getMonth() + 1).toString();
-            let day = dateObj.getDate().toString();
-            return `${year}-${month.padStart(2, '0')}-${day.padStart(2,'0')}`;
-        }        
-      
-  }}));
+    navLink: function (url, options) {
+      return '<li' +
+        ((url == app.locals.activeRoute) ? ' class="active" ' : '') +
+        '><a href="' + url + '">' + options.fn(this) + '</a></li>';
+    },
+    equal: function (lvalue, rvalue, options) {
+      if (arguments.length < 3)
+        throw new Error("Handlebars Helper equal needs 2 parameters");
+      if (lvalue != rvalue) {
+        return options.inverse(this);
+      } else {
+        return options.fn(this);
+      }
+    },
+    safeHTML: function (context) {
+      return stripJs(context);
+    },
+    increment: function (value) {
+      return value + 1;
+    },
+    formatDate: function (dateObj) {
+      let year = dateObj.getFullYear();
+      let month = (dateObj.getMonth() + 1).toString();
+      let day = dateObj.getDate().toString();
+      return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+    }
+  }
+}));
 
 app.use(express.urlencoded({ extended: true }));
 app.set('view engine', '.hbs');
@@ -65,6 +67,64 @@ app.use(express.static("static"));
 app.use(express.static("public"));
 app.use(express.static("views"));
 
+app.use(
+  clientSessions({
+    cookieName: "session", 
+    secret: "thuan123", 
+    duration: 2 * 60 * 1000, 
+    activeDuration: 1000 * 60, 
+  })
+);
+
+
+app.use(function(req, res, next) {
+  res.locals.session = req.session;
+  next();
+});
+
+
+function ensureLogin(req, res, next) {
+  if (!req.session.user) {
+    res.redirect("/login");
+  } else {
+    next();
+  }
+}
+app.get('/login', (req, res) => {
+  res.render('login');
+});
+
+app.get('/register', (req, res) => {
+res.render('register');
+});
+app.post('/register', (req, res) => {
+  authData
+  .registerUser(req.body)
+  .then(() => {
+    res.render('register', {successMessage: 'User created'});
+  })
+  .catch((err) => {
+    res.render('register', {errorMessage: err, userName: req.body.userName});
+  })
+});
+
+app.post('/login', (req, res) => {
+req.body.userAgent = req.get('User-Agent');
+authData
+  .checkUser(req.body)
+  .then((user) => {
+    req.session.user = {
+      userName: user.userName,
+      email: user.email,
+      loginHistory: user.loginHistory || []
+    };
+    res.redirect('/posts');
+  })
+  .catch((err) => {
+    console.error(err);
+    res.render('login', { errorMessage: err, userName: req.body.userName });
+  });
+});
 app.use(function (req, res, next) {
   let route = req.path.substring(1);
   app.locals.activeRoute = "/" + (isNaN(route.split('/')[1]) ? route.replace(/\/(?!.*)/, "") : route.replace(/\/(.*)/, ""));
@@ -81,7 +141,9 @@ app.get('/about', (req, res) => {
   res.render('about');
 });
 
-app.get('/posts/add', (req, res) => {
+
+
+app.get('/posts/add', ensureLogin, (req, res) => {
   blog_service.getCategories()
     .then((data) => {
       res.render('addPost', {
@@ -93,7 +155,10 @@ app.get('/posts/add', (req, res) => {
     });
 });
 
-app.post('/posts/add', upload.single("featureImage"), (req, res) => {
+
+
+
+app.post('/posts/add', ensureLogin, upload.single("featureImage"), (req, res) => {
   let streamUpload = (req) => {
     return new Promise((resolve, reject) => {
       let stream = cloudinary.uploader.upload_stream((error, result) => {
@@ -123,7 +188,7 @@ app.post('/posts/add', upload.single("featureImage"), (req, res) => {
   });
 });
 
-app.get('/posts/delete/:id', (req, res) => {
+app.get('/posts/delete/:id', ensureLogin, (req, res) => {
   blog_service.deletePostById(req.params.id)
     .then(() => {
       res.redirect('/posts');
@@ -133,12 +198,12 @@ app.get('/posts/delete/:id', (req, res) => {
     });
 });
 
-app.get('/categories/add', (req, res) => {
+app.get('/categories/add', ensureLogin, (req, res) => {
   res.render('addCategory');
 });
 
 
-app.get('/posts', (req, res) => {
+app.get('/posts', ensureLogin, (req, res) => {
   const { category, minDate } = req.query;
   if (category < 6 && category > 0) {
     blog_service.getPostsByCategory(category)
@@ -167,7 +232,7 @@ app.get('/posts', (req, res) => {
   }
 });
 
-app.get('/post/:value', (req, res) => {
+app.get('/post/:id', ensureLogin, (req, res) => {
   blog_service.getPostById(req.params.id)
     .then((data) => {
       res.send(data);
@@ -178,40 +243,28 @@ app.get('/post/:value', (req, res) => {
 });
 
 app.get('/blog', async (req, res) => {
-
   let viewData = {};
-
-  try{
-      let posts = [];
-      if(req.query.category){
-          
-          posts = await blog_service.getPublishedPostsByCategory(req.query.category);
-      }else{
-       
-          posts = await blog_service.getPublishedPosts();
-      }
-      posts.sort((a,b) => new Date(b.postDate) - new Date(a.postDate));
-      let post = posts[0]; 
-      viewData.posts = posts;
-      viewData.post = post;
-
-  }catch(err){
-      viewData.message = "no results";
+  try {
+    let posts = [];
+    if (req.query.category) {
+      posts = await blog_service.getPublishedPostsByCategory(req.query.category);
+    } else {
+      posts = await blog_service.getPublishedPosts();
+    }
+    posts.sort((a, b) => new Date(b.postDate) - new Date(a.postDate));
+    let post = posts[0];
+    viewData.posts = posts;
+    viewData.post = post;
+  } catch (err) {
+    viewData.message = "no results";
   }
-
-  try{
-      // Obtain the full list of "categories"
-      let categories = await blog_service.getCategories();
-
-      // store the "categories" data in the viewData object (to be passed to the view)
-      viewData.categories = categories;
-  }catch(err){
-      viewData.categoriesMessage = "no results"
+  try {
+    let categories = await blog_service.getCategories();
+    viewData.categories = categories;
+  } catch (err) {
+    viewData.categoriesMessage = "no results";
   }
-
-  // render the "blog" view with all of the data (viewData)
-  res.render("blog", {data: viewData})
-
+  res.render("blog", { data: viewData });
 });
 
 app.get('/blog/:id', async (req, res) => {
@@ -242,7 +295,7 @@ app.get('/blog/:id', async (req, res) => {
   res.render("blog", { data: viewData });
 });
 
-app.get('/categories', (req, res) => {
+app.get('/categories', ensureLogin, (req, res) => {
   blog_service.getCategories()
     .then((data) => {
       if (data.length > 0) {
@@ -256,7 +309,7 @@ app.get('/categories', (req, res) => {
     });
 });
 
-app.post('/categories/add', (req, res) => {
+app.post('/categories/add', ensureLogin, (req, res) => {
   blog_service
     .addCategory(req.body)
     .then(() => {
@@ -269,7 +322,7 @@ app.post('/categories/add', (req, res) => {
 });
 
 
-app.get('/categories/delete/:id', (req, res) => {
+app.get('/categories/delete/:id', ensureLogin, (req, res) => {
   blog_service.deleteCategoryById(req.params.id)
     .then(() => {
       res.redirect('/categories');
@@ -279,11 +332,21 @@ app.get('/categories/delete/:id', (req, res) => {
     });
 });
 
+app.get('/logout', (req, res) => {
+  req.session.reset();
+  res.redirect('/');
+});
+
+app.get('/userHistory', ensureLogin, (req, res) => {
+  res.render('userHistory');
+});
+
 app.get('*', (req, res) => {
   res.status(404).send("Page Not Found");
 });
 
 blog_service.initialize()
+.then(authData.initialize())
   .then(() => {
     app.listen(HTTP_PORT, () => console.log(`server listening on: ${HTTP_PORT}`));
   })
