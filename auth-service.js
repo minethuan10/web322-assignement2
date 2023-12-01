@@ -30,89 +30,58 @@ module.exports.initialize = function () {
 };
 
 
-module.exports.registerUser = function (userData) {
-  return new Promise(function (resolve, reject) {
-    // Check if passwords match
-    if (userData.password !== userData.password2) {
-      reject('Passwords do not match');
-      return;
-    }
-
-    // Hash the password
-    bcrypt.hash(userData.password, 10)
-      .then((hash) => {
-        // Create a new User from userData
-        let newUser = new User({
-          userName: userData.userName,
-          password: hash,
-          email: userData.email,
-          loginHistory: [],
-        });
-
-        // Save the user to the database
-        newUser.save()
-          .then(() => {
-            resolve();
-          })
-          .catch((err) => {
-            // Check for duplicate key error
-            if (err.code === 11000) {
-              reject('User Name already taken');
-            } else {
-              reject(`There was an error creating the user: ${err}`);
-            }
-          });
-      })
-      .catch((err) => {
-        reject('There was an error encrypting the password');
-      });
-  });
-};
-
-module.exports.checkUser = function (userData) {
-  return new Promise(function (resolve, reject) {
-    // Find the user in the database
-    User.find({ userName: userData.userName })
-      .then((users) => {
-        if (users.length === 0) {
-          reject(`Unable to find user: ${userData.userName}`);
-          return;
+module.exports.registerUser = async (userData) => {
+    try {
+        if (userData.password !== userData.password2) {
+            throw new Error('Passwords do not match');
         }
 
-        // Compare passwords
-        bcrypt.compare(userData.password, users[0].password)
-          .then((result) => {
-            if (!result) {
-              reject(`Incorrect Password for user: ${userData.userName}`);
-              return;
+        const hash = await bcrypt.hash(userData.password, 10);
+        userData.password = hash;
+
+        const newUser = new User(userData);
+        await newUser.save();
+
+        return Promise.resolve();
+    } catch (err) {
+        if (err.code === 11000) {
+            return Promise.reject('User Name already taken');
+        } else {
+            return Promise.reject('There was an error creating the user: ' + err);
+        }
+    }
+};
+
+module.exports.checkUser = async (userData) => {
+    try {
+        const users = await User.find({ userName: userData.userName }).exec();
+
+        if (users.length === 0) {
+            throw new Error('Unable to find user:' + userData.userName);
+        }
+
+        const result = await bcrypt.compare(userData.password, users[0].password);
+
+        if (result) {
+            if (!users[0].loginHistory) {
+                users[0].loginHistory = [];
             }
 
-            // Record login history
-            const loginInfo = {
-              dateTime: new Date().toString(),
-              userAgent: userData.userAgent,
-            };
+            users[0].loginHistory.push({
+                dateTime: new Date().toString(),
+                userAgent: userData.userAgent,
+            });
 
-            users[0].loginHistory.push(loginInfo);
+            await User.updateOne(
+                { userName: users[0].userName },
+                { $set: { loginHistory: users[0].loginHistory } }
+            ).exec();
 
-            // Update login history in the database
-            User.updateOne(
-              { userName: users[0].userName },
-              { $set: { loginHistory: users[0].loginHistory } }
-            )
-              .then(() => {
-                resolve(users[0]); // Resolve with the user object
-              })
-              .catch((err) => {
-                reject(`There was an error verifying the user: ${err}`);
-              });
-          })
-          .catch((err) => {
-            reject(`There was an error comparing passwords: ${err}`);
-          });
-      })
-      .catch((err) => {
-        reject(`Unable to find user: ${userData.userName}`);
-      });
-  });
+            return Promise.resolve(users[0]);
+        } else {
+            return Promise.reject('Incorrect password:' + userData.userName);
+        }
+    } catch (err) {
+        return Promise.reject('Unable to find user:' + userData.userName);
+    }
 };
